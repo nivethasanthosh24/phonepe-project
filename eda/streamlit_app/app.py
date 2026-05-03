@@ -1,73 +1,42 @@
 import streamlit as st
 import pandas as pd
-import psycopg2
 
-# -----------------------------
-# Database connection
-# -----------------------------
-conn = psycopg2.connect(
-    host="localhost",
-    database="phonepe_db",
-    user="postgres",
-    password="Nivi@2003",
-    port="5432"
-)
-
-st.set_page_config(
-    page_title="PhonePe Transaction Insights",
-    layout="wide"
-)
+st.set_page_config(page_title="PhonePe Transaction Insights", layout="wide")
 
 st.title("📊 PhonePe Transaction Insights Dashboard")
+st.markdown("### Digital Payment Analysis using PhonePe Pulse Data")
 
-# -----------------------------
-# Load data
-# -----------------------------
-df = pd.read_sql("SELECT * FROM aggregated_transaction", conn)
+df = pd.read_csv("outputs/aggregated_transaction.csv")
 
-# -----------------------------
-# Sidebar filters
-# -----------------------------
 st.sidebar.header("Filters")
 
-state = st.sidebar.selectbox("Select State", sorted(df["state"].unique()))
-year = st.sidebar.selectbox("Select Year", sorted(df["year"].unique()))
-quarter = st.sidebar.selectbox("Select Quarter", sorted(df["quarter"].unique()))
+state = st.sidebar.selectbox("Select State", sorted(df["State"].unique()))
+year = st.sidebar.selectbox("Select Year", sorted(df["Year"].unique()))
+quarter = st.sidebar.selectbox("Select Quarter", sorted(df["Quarter"].unique()))
 
 filtered_df = df[
-    (df["state"] == state) &
-    (df["year"] == year) &
-    (df["quarter"] == quarter)
+    (df["State"] == state) &
+    (df["Year"] == year) &
+    (df["Quarter"] == quarter)
 ]
 
-# -----------------------------
-# KPI cards
-# -----------------------------
 col1, col2, col3 = st.columns(3)
 
-col1.metric("Total Transaction Amount", f"₹ {filtered_df['amount'].sum():,.2f}")
-col2.metric("Total Transaction Count", f"{filtered_df['count'].sum():,.0f}")
-col3.metric("Transaction Categories", filtered_df["type"].nunique())
+col1.metric("Total Transaction Amount", f"₹ {filtered_df['Amount'].sum():,.2f}")
+col2.metric("Total Transaction Count", f"{filtered_df['Count'].sum():,.0f}")
+col3.metric("Transaction Categories", filtered_df["Type"].nunique())
 
-# -----------------------------
-# Charts
-# -----------------------------
 st.subheader("Transaction Amount by Category")
-category_amount = filtered_df.groupby("type")["amount"].sum()
+category_amount = filtered_df.groupby("Type")["Amount"].sum()
 st.bar_chart(category_amount)
 
 st.subheader("Year-wise Transaction Trend")
-year_trend = df.groupby("year")["amount"].sum()
+year_trend = df.groupby("Year")["Amount"].sum()
 st.line_chart(year_trend)
 
 st.subheader("Top 10 States by Transaction Amount")
-top_states = df.groupby("state")["amount"].sum().sort_values(ascending=False).head(10)
+top_states = df.groupby("State")["Amount"].sum().sort_values(ascending=False).head(10)
 st.bar_chart(top_states)
 
-# -----------------------------
-# Data preview
-# -----------------------------
 st.subheader("Filtered Data Preview")
 st.dataframe(filtered_df)
-
-conn.close()
